@@ -136,11 +136,13 @@ wal_writer_node::~wal_writer_node() {
 }
 future<> wal_writer_node::rotate_fstream() {
   return fstream_.flush().then([this] {
-    return fstream_.close().then([this] {
-      epoch_ += max_size;
-      current_size_ = 0;
-      return open();
-    });
+    // Schedule the future<> close().
+    // Let the I/O scheduler close it concurrently
+    //
+    fstream_.close();
+    epoch_ += max_size;
+    current_size_ = 0;
+    return open();
   });
 }
 
